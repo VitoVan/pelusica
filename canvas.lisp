@@ -75,6 +75,7 @@
 
 (defparameter *paused* nil)
 (defparameter *died* nil)
+(defparameter *suffocated* nil)
 (defparameter *music-played* 0)
 (defparameter *music-index* 0)
 (defparameter *level* 0)
@@ -129,7 +130,8 @@
               (setf *ball-y* (- *ball-y* (* *music-played* 42))))
             (incf *music-index*)))
       (progn
-        (setf *died* t)
+        (setf *died* t
+              *suffocated* t)
         (u:play-music "assets/block.wav"))))
 
 (defun reset-game ()
@@ -143,6 +145,7 @@
    *music-index* 0
    *level* 0
    *died* nil
+   *suffocated* nil
    ))
 
 (defun on-keydown (key)
@@ -172,10 +175,14 @@
       (t (format t "~%KEY PRESSED: ~A~%" key)))))
 
 (defun draw-died-screen ()
-  (apply #'c:set-source-rgb *not-health-color*)
+  (if *suffocated*
+      (apply #'c:set-source-rgb *not-health-color*)
+      (apply #'c:set-source-rgb *health-color*))
   (c:arc 300 300 50 0 (* 2 pi))
   (c:fill-path)
-  (apply #'c:set-source-rgb *health-color*)
+  (if *suffocated*
+      (apply #'c:set-source-rgb *health-color*)
+      (c:set-source-rgb 1 1 1))
   (c:move-to 280 280)
   (c:line-to 320 320)
   (c:stroke)
