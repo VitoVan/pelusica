@@ -207,11 +207,10 @@
     (c:stroke))
   (c:restore))
 
-
 (defun recal-level ()
   (setf
    *level* (* 40 (/ *music-index* (length *music-list*)))
-   *enemy-move-per-ms* (max 0.4 (/ (log (1+ *level*)) 4))))
+   *enemy-move-per-ms* (max 0.22 (/ (log (1+ *level*)) 4))))
 
 (defun draw-level-border ()
   (apply #'c:set-source-rgb *ball-color*)
