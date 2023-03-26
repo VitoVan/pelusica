@@ -4,7 +4,7 @@
 ;; CALM version check
 ;;
 
-(let ((required-version "0.0.39")
+(let ((required-version "0.0.40")
       (calm-version (slot-value (asdf:find-system 'calm) 'asdf:version)))
   (when (uiop:version< calm-version required-version)
     (format t "Sorry, this is built on CALM ~A, older version (current: ~A) of CALM won't work.~%" required-version calm-version)
@@ -82,8 +82,8 @@
 (defparameter *ball-y* 570)
 (defparameter *enemy-list* (list (list 1 400) (list 2 300) (list 3 200) (list 4 100) (list 5 0)))
 
-(defparameter *enemy-step-length* 5)
-(defparameter *min-timegap* *calm-delay*)
+(defparameter *enemy-move-per-ms* 0.2)
+(defparameter *enemy-move-tick* nil)
 
 (defparameter *bg-color* '(1 1 1))
 (defparameter *enemy-color* '(0 0 0))
@@ -135,6 +135,8 @@
 (defun reset-game ()
   (setf
    *enemy-list* (list (list 1 400) (list 2 300) (list 3 200) (list 4 100) (list 5 0))
+   *enemy-move-per-ms* 0.2
+   *enemy-move-tick* nil
    *ball-x* 100
    *ball-y* 570
    *music-played* 0
@@ -146,7 +148,9 @@
 (defun on-keydown (key)
   (cond
     ((eq key :SCANCODE-P)
-     (setf *paused* (not *paused*))))
+     (setf
+      *paused* (not *paused*)
+      *enemy-move-tick* nil)))
 
   (when *died*
     (cond
@@ -198,8 +202,9 @@
 
 
 (defun recal-level ()
-  (setf *level*
-        (* 40 (/ *music-index* (length *music-list*)))))
+  (setf
+   *level* (* 40 (/ *music-index* (length *music-list*)))
+   *enemy-move-per-ms* (max 0.4 (/ (log (1+ *level*)) 4))))
 
 (defun draw-level-border ()
   (apply #'c:set-source-rgb *ball-color*)
@@ -248,17 +253,12 @@
   (c:stroke)
   (c:restore))
 
-(defparameter *enemy-last-draw* (sdl2:get-ticks))
-
 (defun draw-enemies ()
   (when (< *music-played* 2)
     (let ((should-move
             (and
              (not *died*)
-             (not *paused*)
-             (<
-              (+ (max *min-timegap* (round (* (- 3.5 (log (1+ *level*))) 9))) *enemy-last-draw*)
-              (sdl2:get-ticks)))))
+             (not *paused*))))
       (loop
         for enemy in *enemy-list*
         for x = (* 100 (car enemy))
@@ -268,18 +268,22 @@
           do
              (draw-enemy x y)
              ;; test if hit the ball, mercy 10
-             (when (and (not *died*) (= *ball-x* x) (< (abs (- *ball-y* y)) 5))
+             (when (and (not *died*) (= *ball-x* x) (< (abs (- *ball-y* y)) 10))
                (setf *died* t)
                (u:play-music "assets/chord.wav"))
              (when should-move
                ;; move downward
-               (incf (cadr (nth i *enemy-list*)) *enemy-step-length*))
+               (incf
+                (cadr (nth i *enemy-list*))
+                (if *enemy-move-tick*
+                    (* (- (sdl2:get-ticks) *enemy-move-tick*) *enemy-move-per-ms*)
+                    1)))
         else
           do
              ;; random reset the Y position
              (setf (cadr (nth i *enemy-list*)) (* (1+ (random 400)) -1))
         )
-      (when should-move (setf *enemy-last-draw* (sdl2:get-ticks))))))
+      (when should-move (setf *enemy-move-tick* (sdl2:get-ticks))))))
 
 (defun draw-ball ()
   (c:save)
