@@ -20,7 +20,7 @@ jobs:
       - name: Build
         run: |
           set -x
-          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.0.39/calm.tgz
+          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.0.40/calm.tgz
           mkdir calm
           tar xvf calm.tgz --directory=calm
           ls -lah calm
@@ -56,7 +56,7 @@ jobs:
           else
               export OS_SUBFIX=".${CI_MATRIX_OS}"
           fi
-          curl -L -o calm.dmg https://github.com/VitoVan/calm/releases/download/0.0.39/calm${OS_SUBFIX}.dmg
+          curl -L -o calm.dmg https://github.com/VitoVan/calm/releases/download/0.0.40/calm${OS_SUBFIX}.dmg
           7z x calm.dmg -ocalm-dmg
           mv "calm-dmg/Calm - CALM/Calm.app/Contents/MacOS/" calm
           rm calm.dmg
@@ -91,7 +91,7 @@ jobs:
         run: |
           set -x
           pacman -S --noconfirm --needed unzip
-          curl -L -o calm.zip https://github.com/VitoVan/calm/releases/download/0.0.39/calm.zip
+          curl -L -o calm.zip https://github.com/VitoVan/calm/releases/download/0.0.40/calm.zip
           unzip calm.zip -d calm
           ls -lah calm
           export PATH=$PATH:$(pwd)/calm/
