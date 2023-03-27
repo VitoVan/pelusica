@@ -81,7 +81,7 @@
 (defparameter *level* 0)
 (defparameter *ball-x* 100)
 (defparameter *ball-y* 570)
-(defparameter *enemy-list* (list (list 1 400) (list 2 300) (list 3 200) (list 4 100) (list 5 0)))
+(defparameter *enemy-list* (list (list 1 200) (list 2 100) (list 3 0) (list 4 -100) (list 5 -200)))
 
 (defparameter *enemy-move-per-ms* 0.2)
 (defparameter *enemy-move-tick* nil)
@@ -136,7 +136,7 @@
 
 (defun reset-game ()
   (setf
-   *enemy-list* (list (list 1 400) (list 2 300) (list 3 200) (list 4 100) (list 5 0))
+   *enemy-list* (list (list 1 200) (list 2 100) (list 3 0) (list 4 -100) (list 5 -200))
    *enemy-move-per-ms* 0.2
    *enemy-move-tick* nil
    *ball-x* 100
