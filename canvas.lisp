@@ -1,13 +1,12 @@
+;; pelusica 0.0.4
+
 (in-package #:calm)
 
-;;
-;; CALM version check
-;;
-
-(let ((required-version "0.0.40")
-      (calm-version (slot-value (asdf:find-system 'calm) 'asdf:version)))
-  (when (uiop:version< calm-version required-version)
-    (format t "Sorry, this is built on CALM ~A, older version (current: ~A) of CALM won't work.~%" required-version calm-version)
+#-jscl
+(let ((required-version "0.1.0"))
+  (unless (string>= *calm-version* required-version)
+    (format t "Sorry, CALM ~A is needed, older version (current: ~A) of CALM won't work.~%"
+            required-version *calm-version*)
     (uiop:quit 42)))
 
 ;;
@@ -18,6 +17,7 @@
 ;;        https://lispcookbook.github.io/cl-cookbook/vscode-alive.html
 ;;
 ;; uncomment the following line to enable SWANK Server
+#-jscl
 (unless (str:starts-with? "dist" (uiop:getenv "CALM_CMD")) (swank:create-server))
 
 ;;
@@ -33,7 +33,10 @@
 ;;
 (setf *calm-window-width* 600)
 (setf *calm-window-height* 600)
-(setf *calm-window-title* "Pelusica")
+(setf *calm-window-title* "Pelúsica")
+#+jscl
+(setf *calm-fps* 0)
+#-jscl
 (setf *calm-delay* 4)
 
 (defparameter *music-list* '(
@@ -73,6 +76,7 @@
                              f+3 a3  c4 d4 c4 b3 a3 g3
                              ))
 
+(defparameter *started* nil)
 (defparameter *paused* nil)
 (defparameter *died* nil)
 (defparameter *suffocated* nil)
@@ -120,9 +124,9 @@
             *health-color* *health-color-dark*)))
 
 (defun play-note ()
-  (if (< (sdl2-mixer:playing -1) 8)
+  (if (< (c:playing) 8)
       (progn
-        (u:play-wav (str:concat "assets/" (str:downcase (nth *music-index* *music-list*)) ".wav"))
+        (c:play-wav (concatenate 'string "assets/" (string-downcase (nth *music-index* *music-list*)) ".wav"))
         (if (>= *music-index* (1- (length *music-list*)))
             (progn
               (setf *music-index* 0)
@@ -132,7 +136,7 @@
       (progn
         (setf *died* t
               *suffocated* t)
-        (u:play-music "assets/block.wav"))))
+        (c:play-music "assets/block.wav"))))
 
 (defun reset-game ()
   (setf
@@ -146,33 +150,67 @@
    *level* 0
    *died* nil
    *suffocated* nil
+   *calm-redraw* t
    ))
 
 (defun on-keydown (key)
   (cond
-    ((eq key :SCANCODE-P)
+    ((c:keq key :SCANCODE-P)
      (setf
       *paused* (not *paused*)
       *enemy-move-tick* nil)))
 
+  (unless *started*
+    (cond
+      ((c:keq key :SCANCODE-RETURN :SCANCODE-LEFT :SCANCODE-RIGHT)
+       (c:open-audio-if-not-yet)
+       (setf *started* t))))
+
   (when *died*
     (cond
-      ((eq key :SCANCODE-RETURN)
+      ((c:keq key :SCANCODE-RETURN)
        (reset-game))))
 
-  (when (and (not *died*) (not *paused*))
+  (when (and (not *died*) (not *paused*) *started*)
     (cond
-      ((or (eq key :SCANCODE-RIGHT)
-           ;; for those evil vimers
-           (eq key :SCANCODE-K) (eq key :SCANCODE-L))
+      ((c:keq key :SCANCODE-RIGHT :SCANCODE-K :SCANCODE-L)
        (when (and (< *ball-x* 450) (play-note))
          (incf *ball-x* 100)))
-      ((or (eq key :SCANCODE-LEFT)
-           ;; for those evil vimers
-           (eq key :SCANCODE-J) (eq key :SCANCODE-H))
+      ((c:keq key :SCANCODE-LEFT :SCANCODE-J :SCANCODE-H)
        (when (and (> *ball-x* 100) (play-note))
+         #+jscl
+         (incf *ball-x* -100)
+         #-jscl
          (decf *ball-x* 100)))
       (t (format t "~%KEY PRESSED: ~A~%" key)))))
+
+(defun draw-welcome-screen ()
+  (c:set-source-rgb 1 1 1)
+  (c:paint)
+  (c:select-font-family "Open Sans" :normal :normal)
+  (c:set-font-size 24)
+  (apply #'c:set-source-rgb *ball-color*)
+  (c:move-to 142 240)
+  (c:show-text "press ")
+  (apply #'c:set-source-rgb *health-color*)
+  #-jscl
+  (cond
+    ((uiop:os-macosx-p) (c:show-text "return"))
+    (t (c:show-text "Enter")))
+  #+jscl
+  (if (= (#j:window:navigator:userAgent:indexOf "Mac OS") -1)
+      (c:show-text "Enter")
+      (c:show-text "return"))
+  (apply #'c:set-source-rgb *ball-color*)
+  (c:show-text ", and wait to die")
+  (c:move-to 142 290)
+  (c:show-text "or try pressing ")
+  (apply #'c:set-source-rgb *health-color*)
+  (c:show-text "left")
+  (apply #'c:set-source-rgb *ball-color*)
+  (c:show-text " / ")
+  (apply #'c:set-source-rgb *health-color*)
+  (c:show-text "right"))
 
 (defun draw-died-screen ()
   (if *suffocated*
@@ -199,18 +237,22 @@
 
     (c:move-to 580 20)
 
-    (if (or *died* (= (sdl2-mixer:playing -1) 8))
+    (if (or *died* (= (c:playing) 8))
         (apply #'c:set-source-rgb *not-health-color*)
         (apply #'c:set-source-rgb *health-color*))
     (c:line-to (- 580 (* (/ bar-width bar-points)
-                         (if *died* 0 (- 8 (sdl2-mixer:playing -1))))) 20)
+                         (if *died* 0 (- 8 (c:playing))))) 20)
     (c:stroke))
   (c:restore))
 
 (defun recal-level ()
   (setf
    *level* (* 40 (/ *music-index* (length *music-list*)))
-   *enemy-move-per-ms* (max 0.22 (/ (log (1+ *level*)) 4))))
+   *enemy-move-per-ms* (max 0.22 (/
+                                  #+jscl
+                                  (#j:Math:log (1+ *level*))
+                                  #-jscl
+                                  (log (1+ *level*)) 4))))
 
 (defun draw-level-border ()
   (apply #'c:set-source-rgb *ball-color*)
@@ -276,20 +318,40 @@
              ;; test if hit the ball, mercy 10
              (when (and (not *died*) (= *ball-x* x) (< (abs (- *ball-y* y)) 10))
                (setf *died* t)
-               (u:play-music "assets/chord.wav"))
+               (c:play-music "assets/chord.wav"))
              (when should-move
                ;; move downward
+               ;; this clumsy chunk is to indulge jscl
+               ;; track: https://github.com/jscl-project/jscl/issues/176
+               #+jscl
+               (let ((current-enemy (nth i *enemy-list*)))
+                 (setf (nth i *enemy-list*)
+                       (list
+                        (car current-enemy)
+                        (+ (cadr current-enemy)
+                           (if *enemy-move-tick*
+                               (* (- (c:get-ticks) *enemy-move-tick*) *enemy-move-per-ms*)
+                               1)))))
+               #-jscl
                (incf
                 (cadr (nth i *enemy-list*))
                 (if *enemy-move-tick*
-                    (* (- (sdl2:get-ticks) *enemy-move-tick*) *enemy-move-per-ms*)
+                    (* (- (c:get-ticks) *enemy-move-tick*) *enemy-move-per-ms*)
                     1)))
         else
           do
              ;; random reset the Y position
-             (setf (cadr (nth i *enemy-list*)) (* (1+ (random 400)) -1))
-        )
-      (when should-move (setf *enemy-move-tick* (sdl2:get-ticks))))))
+             ;; this clumsy chunk is to indulge jscl
+             ;; track: https://github.com/jscl-project/jscl/issues/176
+             #+jscl
+              (let ((current-enemy (nth i *enemy-list*)))
+                (setf (nth i *enemy-list*)
+                      (list
+                       (car current-enemy)
+                       (* (1+ (random 400)) -1))))
+             #-jscl
+              (setf (cadr (nth i *enemy-list*)) (* (1+ (random 400)) -1)))
+      (when should-move (setf *enemy-move-tick* (c:get-ticks))))))
 
 (defun draw-ball ()
   (c:save)
@@ -301,27 +363,11 @@
   (c:restore))
 
 
-(defun draw ()
-
-  (u:open-audio-if-not-yet)
-
-  (apply #'c:set-source-rgb *bg-color*)
-  (c:paint)
-
-  ;; lines
-  (c:set-source-rgb 0.83 0.82 0.84)
-  (loop for x from 1 to 5
-        do
-           (c:move-to (* 100 x) 0)
-           (c:line-to (* 100 x) 600)
-           (c:stroke))
-
-  (c:set-line-cap :round)
-  (c:set-line-width 30)
-  (switch-color)
-  (draw-health-bar)(defun draw ()
-
-  (u:open-audio-if-not-yet)
+(defun draw-forever ()
+  (unless *started*
+    (draw-welcome-screen)
+    (setf *calm-redraw* nil)
+    (return-from draw-forever))
 
   (apply #'c:set-source-rgb *bg-color*)
   (c:paint)
@@ -343,10 +389,7 @@
   (draw-level-border)
   (draw-ball)
   (when *died*
-    (draw-died-screen)))
-  (draw-enemies)
-  (recal-level)
-  (draw-level-border)
-  (draw-ball)
-  (when *died*
-    (draw-died-screen)))
+    (draw-died-screen))
+
+  (when (or *paused* *died* *suffocated*)
+    (setf *calm-redraw* nil)))
