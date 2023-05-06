@@ -3,7 +3,7 @@ Survive and make noises.
 
 Download:
 
-[![Linux Download](images/linux.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.AppImage) [![macOS Monterey Download](images/macos-monterey.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.dmg) [![Windows Download](images/windows.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.exe) [![macOS Big Sur Download](images/macos-bigsur.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.macos-11.dmg) [![macOS Catalina Download](images/macos-catalina.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.macos-10.15.dmg)
+[![Linux Download](https://img.shields.io/badge/Linux-glibc%202.35+-FFD032.svg?logo=linux)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.AppImage) [![macOS Ventura Download](https://img.shields.io/badge/macOS-Ventura-black?logo=apple)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.macos-13.dmg) [![Windows Download](images/windows.svg)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.exe) [![macOS Monterey Download](https://img.shields.io/badge/macOS-Monterey-white?logo=apple)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.macos-12.dmg) [![macOS Big Sur Download](https://img.shields.io/badge/macOS-Big%20Sur-white?logo=apple)](https://github.com/VitoVan/pelusica/releases/latest/download/Pelusica.macos-11.dmg) 
 
 <img width="400" src="images/pelusica.png" /> <img width="400" src="images/pelusica-dark.png" />
 
