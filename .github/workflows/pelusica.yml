@@ -45,7 +45,7 @@ jobs:
       - name: Build
         run: |
           set -x
-          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.0.40/calm.tgz
+          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.1.0/calm.tgz
           mkdir calm
           tar xvf calm.tgz --directory=calm
           ls -lah calm
@@ -107,7 +107,7 @@ jobs:
         run: |
           set -x
           pacman -S --noconfirm --needed unzip
-          curl -L -o calm.zip https://github.com/VitoVan/calm/releases/download/0.0.40/calm.zip
+          curl -L -o calm.zip https://github.com/VitoVan/calm/releases/download/0.1.0/calm.zip
           unzip calm.zip -d calm
           ls -lah calm
           export PATH=$PATH:$(pwd)/calm/
