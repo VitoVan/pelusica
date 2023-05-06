@@ -1,4 +1,13 @@
+;; pelusica 0.0.4
+
 (in-package #:calm)
+
+#-jscl
+(let ((required-version "0.1.0"))
+  (unless (string>= *calm-version* required-version)
+    (format t "Sorry, CALM ~A is needed, older version (current: ~A) of CALM won't work.~%"
+            required-version *calm-version*)
+    (uiop:quit 42)))
 
 ;;
 ;; the swank server is for debugging, for usage please check

@@ -10,7 +10,32 @@ on:
       - "test-pelusica-*"
 
 jobs:
+  Web:
+    runs-on: ubuntu-22.04
 
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: |
+          npm install uglify-js -g
+          set -x
+          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.1.0/calm.tgz
+          mkdir calm
+          tar xvf calm.tgz --directory=calm
+          ls -lah calm
+          export PATH=$PATH:$(pwd)/calm/
+          export APP_NAME=Pelusica
+          calm publish-web
+          ls -lah .
+          zip -r -9 ${APP_NAME}-web.zip ./web
+          cp *.zip ../../../
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          prerelease: true
+          files: |
+            *-web.zip
   Linux:
     runs-on: ubuntu-22.04
 
@@ -39,7 +64,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-11, macos-12, macos-10.15]
+        os: [macos-11, macos-12, macos-13]
 
     env:
       CI_MATRIX_OS: ${{ matrix.os }}
@@ -50,23 +75,14 @@ jobs:
       - name: Build
         run: |
           set -x
-          brew install 7zip
-          if [ "${CI_MATRIX_OS}" = "macos-12" ]; then
-              export OS_SUBFIX=""
-          else
-              export OS_SUBFIX=".${CI_MATRIX_OS}"
-          fi
-          curl -L -o calm.dmg https://github.com/VitoVan/calm/releases/download/0.0.40/calm${OS_SUBFIX}.dmg
-          7z x calm.dmg -ocalm-dmg
-          mv "calm-dmg/Calm - CALM/Calm.app/Contents/MacOS/" calm
-          rm calm.dmg
-          rm calm/lib/libSDL2.dylib
-          cp calm/lib/libSDL2-2.0.0.dylib calm/lib/libSDL2.dylib
+          export OS_SUBFIX=".${CI_MATRIX_OS}"
+          curl -L -o calm.dmg https://github.com/VitoVan/calm/releases/download/0.1.0/calm${OS_SUBFIX}.dmg
+          hdiutil attach calm.dmg
+          cp -R "/Volumes/Calm - CALM/Calm.app/Contents/MacOS/" calm
           ls -lah calm
-          chmod +x calm/calm
-          chmod +x calm/sbcl/bin/sbcl
+          rm calm.dmg
           export PATH=$PATH:$(pwd)/calm/
-          export APP_VERSION=0.0.1
+          export APP_VERSION=0.0.4
           export APP_ID=com.vitovan.pelusica
           export APP_NAME=Pelusica
           calm publish
