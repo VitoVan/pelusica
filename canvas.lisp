@@ -1,9 +1,9 @@
-;; pelusica 0.0.4
+;; pelusica 0.0.5
 
 (in-package #:calm)
 
 #-jscl
-(let ((required-version "0.1.0"))
+(let ((required-version "0.1.1"))
   (unless (string>= *calm-version* required-version)
     (format t "Sorry, CALM ~A is needed, older version (current: ~A) of CALM won't work.~%"
             required-version *calm-version*)
@@ -178,9 +178,6 @@
          (incf *ball-x* 100)))
       ((c:keq key :SCANCODE-LEFT :SCANCODE-J :SCANCODE-H)
        (when (and (> *ball-x* 100) (play-note))
-         #+jscl
-         (incf *ball-x* -100)
-         #-jscl
          (decf *ball-x* 100)))
       (t (format t "~%KEY PRESSED: ~A~%" key)))))
 
@@ -190,7 +187,7 @@
   (c:select-font-family "Open Sans" :normal :normal)
   (c:set-font-size 24)
   (apply #'c:set-source-rgb *ball-color*)
-  (c:move-to 142 240)
+  (c:move-to 140 240)
   (c:show-text "press ")
   (apply #'c:set-source-rgb *health-color*)
   #-jscl
@@ -202,15 +199,17 @@
       (c:show-text "Enter")
       (c:show-text "return"))
   (apply #'c:set-source-rgb *ball-color*)
-  (c:show-text ", and wait to die")
-  (c:move-to 142 290)
-  (c:show-text "or try pressing ")
+  (c:show-text " to start or restart")
+  (c:move-to 140 290)
+  (c:show-text "press ")
   (apply #'c:set-source-rgb *health-color*)
   (c:show-text "left")
   (apply #'c:set-source-rgb *ball-color*)
-  (c:show-text " / ")
+  (c:show-text " or ")
   (apply #'c:set-source-rgb *health-color*)
-  (c:show-text "right"))
+  (c:show-text "right")
+  (apply #'c:set-source-rgb *ball-color*)
+  (c:show-text " to move"))
 
 (defun draw-died-screen ()
   (if *suffocated*
@@ -249,9 +248,6 @@
   (setf
    *level* (* 40 (/ *music-index* (length *music-list*)))
    *enemy-move-per-ms* (max 0.22 (/
-                                  #+jscl
-                                  (#j:Math:log (1+ *level*))
-                                  #-jscl
                                   (log (1+ *level*)) 4))))
 
 (defun draw-level-border ()
@@ -321,18 +317,6 @@
                (c:play-music "assets/chord.wav"))
              (when should-move
                ;; move downward
-               ;; this clumsy chunk is to indulge jscl
-               ;; track: https://github.com/jscl-project/jscl/issues/176
-               #+jscl
-               (let ((current-enemy (nth i *enemy-list*)))
-                 (setf (nth i *enemy-list*)
-                       (list
-                        (car current-enemy)
-                        (+ (cadr current-enemy)
-                           (if *enemy-move-tick*
-                               (* (- (c:get-ticks) *enemy-move-tick*) *enemy-move-per-ms*)
-                               1)))))
-               #-jscl
                (incf
                 (cadr (nth i *enemy-list*))
                 (if *enemy-move-tick*
@@ -340,17 +324,8 @@
                     1)))
         else
           do
-             ;; random reset the Y position
-             ;; this clumsy chunk is to indulge jscl
-             ;; track: https://github.com/jscl-project/jscl/issues/176
-             #+jscl
-              (let ((current-enemy (nth i *enemy-list*)))
-                (setf (nth i *enemy-list*)
-                      (list
-                       (car current-enemy)
-                       (* (1+ (random 400)) -1))))
-             #-jscl
-              (setf (cadr (nth i *enemy-list*)) (* (1+ (random 400)) -1)))
+             ;; randomly reset the Y position
+             (setf (cadr (nth i *enemy-list*)) (* (1+ (random 400)) -1)))
       (when should-move (setf *enemy-move-tick* (c:get-ticks))))))
 
 (defun draw-ball ()
