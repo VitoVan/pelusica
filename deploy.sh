@@ -15,6 +15,8 @@ mv web "${PELUSICA_VERSION}"
 
 rm *.zip
 
+ls **/*.js | xargs -I _ uglifyjs _ -c -m -o _
+
 git add .
 git commit -m "Deploy to gh-pages"
 git push --set-upstream origin gh-pages
