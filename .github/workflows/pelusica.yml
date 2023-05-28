@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: |
           set -x
-          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.1.1/calm.tgz
+          curl -L -o calm.tgz https://github.com/VitoVan/calm/releases/download/0.1.2/calm.tgz
           mkdir calm
           tar xvf calm.tgz --directory=calm
           ls -lah calm

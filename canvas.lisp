@@ -2,12 +2,18 @@
 
 (in-package #:calm)
 
+;;
+;; CALM version check
+;; version check won't work on JSCL, since the lack of ASDF
+;;
 #-jscl
-(let ((required-version "0.1.1"))
-  (unless (string>= *calm-version* required-version)
-    (format t "Sorry, CALM ~A is needed, older version (current: ~A) of CALM won't work.~%"
-            required-version *calm-version*)
-    (uiop:quit 42)))
+(let ((required-version "0.1.2")
+      (calm-version (slot-value (asdf:find-system 'calm) 'asdf:version)))
+  (when (uiop:version< calm-version required-version)
+    (format t
+            "Sorry, this is built on CALM ~A, older version (current: ~A) of CALM won't work.~%"
+            required-version calm-version)
+    (uiop:quit)))
 
 ;;
 ;; the swank server is for debugging, for usage please check
@@ -88,7 +94,9 @@
 (defparameter *enemy-list* (list (list 1 200) (list 2 100) (list 3 0) (list 4 -100) (list 5 -200)))
 
 (defparameter *enemy-move-per-ms* 0.2)
-(defparameter *enemy-move-tick* nil)
+(defparameter *enemy-move-tick* nil
+  "to detect should we move the enemies,
+the value were set when running, leave this nil while def")
 
 (defparameter *bg-color* '(1 1 1))
 (defparameter *enemy-color* '(0 0 0))
@@ -160,17 +168,6 @@
       *paused* (not *paused*)
       *enemy-move-tick* nil)))
 
-  (unless *started*
-    (cond
-      ((c:keq key :SCANCODE-RETURN :SCANCODE-LEFT :SCANCODE-RIGHT)
-       (c:open-audio-if-not-yet)
-       (setf *started* t))))
-
-  (when *died*
-    (cond
-      ((c:keq key :SCANCODE-RETURN)
-       (reset-game))))
-
   (when (and (not *died*) (not *paused*) *started*)
     (cond
       ((c:keq key :SCANCODE-RIGHT :SCANCODE-K :SCANCODE-L)
@@ -179,7 +176,41 @@
       ((c:keq key :SCANCODE-LEFT :SCANCODE-J :SCANCODE-H)
        (when (and (> *ball-x* 100) (play-note))
          (decf *ball-x* 100)))
-      (t (format t "~%KEY PRESSED: ~A~%" key)))))
+      (t (format t "~%KEY PRESSED: ~A~%" key))))
+
+  (unless *started*
+    (cond
+      ((c:keq key :SCANCODE-RETURN :SCANCODE-LEFT :SCANCODE-RIGHT)
+       (setf *started* t))))
+
+  (when *died*
+    (cond
+      ((c:keq key :SCANCODE-RETURN)
+       (reset-game)))))
+
+(defun on-fingerup (&key x  y dx dy pressure finger-id)
+  (declare (ignore y dx dy pressure finger-id))
+
+
+
+  (when (and (not *died*) (not *paused*) *started*)
+    (cond
+      ((> x 0.5)
+       (when (and (< *ball-x* 450) (play-note))
+         (incf *ball-x* 100)))
+      ((< x 0.5)
+       (when (and (> *ball-x* 100) (play-note))
+         (decf *ball-x* 100)))
+      ((= x 0.5) ;; I wonder who can actually do this?
+       (setf
+        *paused* (not *paused*)
+        *enemy-move-tick* nil))
+      (t (format t "~%Finger pressed, x: ~A~%" x))))
+
+  (unless *started* (setf *started* t))
+
+  (when *died*
+    (reset-game)))
 
 (defun draw-welcome-screen ()
   (c:set-source-rgb 1 1 1)
@@ -187,7 +218,7 @@
   (c:select-font-family "Open Sans" :normal :normal)
   (c:set-font-size 24)
   (apply #'c:set-source-rgb *ball-color*)
-  (c:move-to 140 240)
+  (c:move-to 120 240)
   (c:show-text "press ")
   (apply #'c:set-source-rgb *health-color*)
   #-jscl
@@ -200,7 +231,7 @@
       (c:show-text "return"))
   (apply #'c:set-source-rgb *ball-color*)
   (c:show-text " to start or restart")
-  (c:move-to 140 290)
+  (c:move-to 120 290)
   (c:show-text "press ")
   (apply #'c:set-source-rgb *health-color*)
   (c:show-text "left")
@@ -209,7 +240,14 @@
   (apply #'c:set-source-rgb *health-color*)
   (c:show-text "right")
   (apply #'c:set-source-rgb *ball-color*)
-  (c:show-text " to move"))
+  (c:show-text " to move")
+
+  #+jscl
+  (when (or (<= #j:screen:width 800) (<= #j:screen:height 600))
+    (c:move-to 120 370)
+    (c:show-text "If you don't have keyboard now,")
+    (c:move-to 120 420)
+    (c:show-text "touch the left or right half of screen")))
 
 (defun draw-died-screen ()
   (if *suffocated*
