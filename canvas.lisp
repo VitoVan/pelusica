@@ -1,4 +1,4 @@
-;; pelusica 0.0.5
+;; pelusica 0.0.6
 
 (in-package #:calm)
 
