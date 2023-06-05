@@ -1,5 +1,5 @@
 # Pelúsica 🎼 ⚽️
-Survive and make noises.
+Survive and make melodies.
 
 [![open in the browser](https://img.shields.io/badge/open-in%20the%20browser-brightgreen?logo=webassembly&logoColor=white)](<https://vitovan.com/pelusica/0.0.6/calm.html>)
 
