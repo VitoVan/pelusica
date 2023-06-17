@@ -1,7 +1,8 @@
 # Pelúsica 🎼 ⚽️
-Survive and make melodies.
 
 [![](https://img.shields.io/badge/play-on%20itch.io-ff2e51?logo=itch.io)](https://vitovan.itch.io/pelusica)
+
+Survive and make melodies.
 
 <img width="400" src="images/pelusica.png" /> <img width="400" src="images/pelusica-dark.png" />
 
