@@ -162,6 +162,15 @@ the value were set when running, leave this nil while def")
    ))
 
 (defun on-keydown (key)
+  (when (c:keq key
+               :SCANCODE-RIGHT
+               :SCANCODE-K
+               :SCANCODE-L
+               :SCANCODE-LEFT
+               :SCANCODE-J
+               :SCANCODE-H
+               :SCANCODE-RETURN)
+    (c:open-audio-if-not-yet))
   (cond
     ((c:keq key :SCANCODE-P)
      (setf
@@ -191,7 +200,7 @@ the value were set when running, leave this nil while def")
 (defun on-fingerup (&key x  y dx dy pressure finger-id)
   (declare (ignore y dx dy pressure finger-id))
 
-
+  (c:open-audio-if-not-yet)
 
   (when (and (not *died*) (not *paused*) *started*)
     (cond
